@@ -37,7 +37,7 @@ mfccs,sr = extract_mfcc_features("video.mp4")
 plt.figure(figsize=(10, 4))
 for i, mfcc in enumerate(mfccs):
     plt.subplot(len(mfccs), 1, i+1) #ploting multiple plot in one figure
-    librosa.display.specshow(mfcc, sr=sr, x_axis='time') # display the feature spectrum
+    librosa.display.specshow(mfcc, sr=sr, x_axis='time') # displays the feature spectrum
     plt.title(f"MFCC for Frame {i+1}")
 plt.tight_layout() # manage padding across subplots
 plt.show()
