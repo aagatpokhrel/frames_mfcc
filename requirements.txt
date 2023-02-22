@@ -1,5 +1,4 @@
-opencv-python==4.7.0.68
 matplotlib==3.5.1
 numpy==1.23.5
-librosa==0.9.2
+librosa==0.8.1
 numba==0.56.4

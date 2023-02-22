@@ -3,42 +3,102 @@ import librosa
 import librosa.display
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 
-def video_to_image(video_file):
-    video = cv2.VideoCapture(video_file)
+def show_all_plots(file_name, interval):
+    # Load audio file
+    fig, axes = plt.subplots(nrows=7, ncols=1, figsize=(8, 12))
+    
+    y, sr = librosa.load(file_name, sr=44100)
 
-    total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
-    frame_rate = video.get(cv2.CAP_PROP_FPS)
+    # Pre-emphasis
+    y_preemp = librosa.effects.preemphasis(y)
+    # Framing
+    n_fft = 2048
+    hop_length = sr*interval
+    y_frames = librosa.util.frame(y_preemp, frame_length=n_fft, hop_length=hop_length)
+    print(len(y_frames))
 
-    extract_frame = int(frame_rate * 5)
+    # Windowing
+    window = np.hanning(n_fft)
+    y_win = y_frames * window.reshape((-1, 1))
+    print (len(y_win))
 
-    for i in range(0, total_frames, extract_frame):
-        video.set(cv2.CAP_PROP_POS_FRAMES, i)
-        success, frame = video.read() 
-        if success:
-            cv2.imwrite("output/frame_{}.jpg".format(i), frame)
-    video.release()
+    # Plot audio signal
+    plt.figure(figsize=(8, 4))
+    librosa.display.waveplot(y, sr=sr)
+    plt.title('Audio Signal')
+    plt.tight_layout()
 
-def extract_mfcc_features(video_file):
-    y, sr = librosa.core.load(video_file)
-    audio_length = librosa.get_duration(y=y, sr=sr)
-    intervals = int(np.ceil(audio_length / 5))
-    interval_start = 0
+    # Plot pre-emphasis
+    plt.figure(figsize=(8, 4))
+    librosa.display.waveplot(y_preemp, sr=sr)
+    plt.title('Pre-emphasis')
+    plt.tight_layout()
+
+    # Plot windowing
+    plt.figure(figsize=(8, 4))
+    plt.plot(window)
+    plt.title('Windowing')
+    plt.tight_layout()
+
+    # Compute features for each frame
+    n_mels = 40
+    n_mfcc = 13
     mfccs = []
-    for i in range(intervals):
-        interval_end = min(interval_start + 5 * sr, len(y))
-        interval = y[interval_start:interval_end]
-        mfccs.append(librosa.feature.mfcc(interval, sr=sr))
-        interval_start = interval_end
-    return mfccs, sr
+    log_mel_S_list = []
+    S = np.zeros((n_fft // 2 + 1, y_win.shape[1]))
+    for i in range(y_win.shape[1]):
+        # Fourier transform
+        Y = np.fft.rfft(y_win[:, i], n_fft, axis=0)
+        # Power spectrum
+        S[:, i] = np.abs(Y) ** 2
+        # Mel filterbank
+        mel_basis = librosa.filters.mel(sr, n_fft, n_mels)
+        mel_S = np.dot(mel_basis, S[:, i])
 
-mfccs,sr = extract_mfcc_features("video.mp4")
+        # Logarithmic compression
+        log_mel_S = librosa.amplitude_to_db(mel_S)
 
-plt.figure(figsize=(10, 4))
-for i, mfcc in enumerate(mfccs):
-    plt.subplot(len(mfccs), 1, i+1)
-    librosa.display.specshow(mfcc, sr=sr, x_axis='time')
-    plt.title(f"MFCC for Frame {i+1}")
-plt.tight_layout()
-plt.show()
+        # MFCCs
+        mfcc = librosa.feature.mfcc(S=log_mel_S, n_mfcc=n_mfcc)
+        mfccs.append(mfcc)
+        log_mel_S_list.append(log_mel_S)
+
+    mfccs = np.array(mfccs)
+    log_mel_S_list = np.array(log_mel_S_list)
+
+    # Plot power spectrum
+    plt.figure(figsize=(8, 4))
+    librosa.display.specshow(S, x_axis='time', y_axis='linear', sr=sr, hop_length=hop_length)
+    plt.colorbar(format='%+2.0f dB')
+    plt.title('Power Spectrum')
+    plt.tight_layout()
+
+    # Plot Mel filterbank
+    plt.figure(figsize=(8, 4))
+    librosa.display.specshow(mel_basis, x_axis='linear', sr=sr, hop_length=hop_length)
+    plt.colorbar()
+    plt.title('Mel Filterbank')
+    plt.tight_layout()
+
+    # Plot logarithmic compression for all frames
+    plt.figure(figsize=(8, 4))
+    librosa.display.specshow(log_mel_S_list, x_axis='time', sr=sr, hop_length=hop_length)
+    plt.colorbar(format='%+2.0f dB')
+    plt.title('Logarithmic Compression')
+    plt.tight_layout()
+
+    # Plot MFCCs for all frames
+    plt.figure(figsize=(10, 4))
+    librosa.display.specshow(mfccs, x_axis='time', sr=sr, hop_length=hop_length)
+    plt.colorbar()
+    plt.title('MFCCs')
+    plt.tight_layout()
+
+    # Show all plots
+    plt.show()
+
+if __name__ == '__main__':
+    file_name = 'video.mp4'
+    interval = 5
+    show_all_plots(file_name, interval)
