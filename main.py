@@ -3,6 +3,45 @@ import librosa
 import librosa.display
 import matplotlib.pyplot as plt
 import numpy as np
+import math
+
+def video_to_image(video_file, interval):
+    video = cv2.VideoCapture(video_file)  #read video file
+
+    total_frames = int(video.get(cv2.CAP_PROP_FRAME_COUNT))  # count the no. of frame in a video
+    frame_rate = video.get(cv2.CAP_PROP_FPS) # get the frame rate of the video
+
+    extract_frame = int(frame_rate * interval)
+
+    for i in range(0, total_frames, extract_frame):
+        video.set(cv2.CAP_PROP_POS_FRAMES, i)  # 0-based index of the frame to be decoded/captured next.
+        success, frame = video.read() 
+        if success:
+            cv2.imwrite("output/frame_{}.jpg".format(i), frame)
+    video.release()
+
+def show_mfcc_plots_by_frames(file_name, interval):
+    y, sr = librosa.core.load(file_name) # Load an audio file as a floating point time series.
+    audio_length = librosa.get_duration(y=y, sr=sr)  # compute the duration (in seconds) of an audio time series
+    intervals = int(np.ceil(audio_length / 5))  #Return the ceiling of the input, element-wise. eg a = [-1.3, -1.2, -1] returns [-1, -1, -1]
+    interval_start = 0
+    mfccs = []
+    for i in range(intervals):
+        interval_end = min(interval_start + 5 * sr, len(y))
+        interval = y[interval_start:interval_end]
+        mfccs.append(librosa.feature.mfcc(y=interval, sr=sr)) # mfccs feature extraction
+        interval_start = interval_end
+    
+    plt.figure(figsize=(16, 9))
+    rows = int(math.ceil(len(mfccs)/2))
+    for i, mfcc in enumerate(mfccs):
+        plt.subplot(rows, 2, i+1) #ploting multiple plot in one figure
+        librosa.display.specshow(mfcc, sr=sr, x_axis='time') # displays the feature spectrum
+        plt.title(f"MFCC for Frame {i+1}")
+    plt.subplots_adjust(hspace=1)
+    # manage padding across subplots
+    plt.show()
+
 
 def show_all_plots(file_name, interval):
     # Load audio file
@@ -16,12 +55,10 @@ def show_all_plots(file_name, interval):
     hop_length = sr*interval
     y_frames = librosa.util.frame(y_preemp, frame_length=n_fft, hop_length=hop_length)
     print(len(y_frames))
-
     # Windowing
     window = np.hanning(n_fft)
     y_win = y_frames * window.reshape((-1, 1))
     print (len(y_win))
-
     # Plot audio signal
     plt.subplot(4, 2, 1) 
     # plt.figure(figsize=(8, 4))
@@ -54,10 +91,8 @@ def show_all_plots(file_name, interval):
         # Mel filterbank
         mel_basis = librosa.filters.mel(sr, n_fft, n_mels)
         mel_S = np.dot(mel_basis, S[:, i])
-
         # Logarithmic compression
         log_mel_S = librosa.amplitude_to_db(mel_S)
-
         # MFCCs
         mfcc = librosa.feature.mfcc(S=log_mel_S, n_mfcc=n_mfcc)
         mfccs.append(mfcc)
@@ -101,4 +136,7 @@ def show_all_plots(file_name, interval):
 if __name__ == '__main__':
     file_name = 'vid.mp4'
     interval = 5
-    show_all_plots(file_name, interval)
+    # video_to_image(file_name, interval)
+    
+    # show_all_plots(file_name, interval)
+    show_mfcc_plots_by_frames(file_name, interval)
