@@ -6,8 +6,7 @@ import numpy as np
 
 def show_all_plots(file_name, interval):
     # Load audio file
-    fig, axes = plt.subplots(nrows=7, ncols=1, figsize=(8, 12))
-    
+    plt.figure(figsize=(16, 9))
     y, sr = librosa.load(file_name, sr=44100)
 
     # Pre-emphasis
@@ -24,22 +23,22 @@ def show_all_plots(file_name, interval):
     print (len(y_win))
 
     # Plot audio signal
-    plt.figure(figsize=(8, 4))
+    plt.subplot(4, 2, 1) 
+    # plt.figure(figsize=(8, 4))
     librosa.display.waveplot(y, sr=sr)
     plt.title('Audio Signal')
-    plt.tight_layout()
 
     # Plot pre-emphasis
-    plt.figure(figsize=(8, 4))
+    plt.subplot(4, 2, 2) 
+    # plt.figure(figsize=(8, 4))
     librosa.display.waveplot(y_preemp, sr=sr)
     plt.title('Pre-emphasis')
-    plt.tight_layout()
 
     # Plot windowing
-    plt.figure(figsize=(8, 4))
+    plt.subplot(4, 2, 3)
+    # plt.figure(figsize=(8, 4))
     plt.plot(window)
     plt.title('Windowing')
-    plt.tight_layout()
 
     # Compute features for each frame
     n_mels = 40
@@ -68,37 +67,38 @@ def show_all_plots(file_name, interval):
     log_mel_S_list = np.array(log_mel_S_list)
 
     # Plot power spectrum
-    plt.figure(figsize=(8, 4))
+    plt.subplot(4, 2, 4) 
+    # plt.figure(figsize=(8, 4))
     librosa.display.specshow(S, x_axis='time', y_axis='linear', sr=sr, hop_length=hop_length)
     plt.colorbar(format='%+2.0f dB')
     plt.title('Power Spectrum')
-    plt.tight_layout()
 
     # Plot Mel filterbank
-    plt.figure(figsize=(8, 4))
+    plt.subplot(4, 2, 5) 
+    # plt.figure(figsize=(8, 4))
     librosa.display.specshow(mel_basis, x_axis='linear', sr=sr, hop_length=hop_length)
     plt.colorbar()
     plt.title('Mel Filterbank')
-    plt.tight_layout()
 
     # Plot logarithmic compression for all frames
-    plt.figure(figsize=(8, 4))
+    plt.subplot(4, 2, 6) 
+    # plt.figure(figsize=(8, 4))
     librosa.display.specshow(log_mel_S_list, x_axis='time', sr=sr, hop_length=hop_length)
     plt.colorbar(format='%+2.0f dB')
     plt.title('Logarithmic Compression')
-    plt.tight_layout()
 
     # Plot MFCCs for all frames
-    plt.figure(figsize=(10, 4))
+    plt.subplot(4, 2, 7) 
+    # plt.figure(figsize=(10, 4))
     librosa.display.specshow(mfccs, x_axis='time', sr=sr, hop_length=hop_length)
     plt.colorbar()
     plt.title('MFCCs')
-    plt.tight_layout()
 
+    plt.subplots_adjust(hspace=1)
     # Show all plots
     plt.show()
 
 if __name__ == '__main__':
-    file_name = 'video.mp4'
+    file_name = 'vid.mp4'
     interval = 5
     show_all_plots(file_name, interval)
