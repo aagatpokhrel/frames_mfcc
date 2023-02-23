@@ -102,11 +102,15 @@ def show_all_plots(file_name, interval):
     log_mel_S_list = np.array(log_mel_S_list)
 
     # Plot power spectrum
-    plt.subplot(4, 2, 4) 
-    # plt.figure(figsize=(8, 4))
-    librosa.display.specshow(S, x_axis='time', y_axis='linear', sr=sr, hop_length=hop_length)
-    plt.colorbar(format='%+2.0f dB')
-    plt.title('Power Spectrum')
+    # plt.subplot(4, 2, 4) 
+    # # plt.figure(figsize=(8, 4))
+    # librosa.display.specshow(S, x_axis='time', y_axis='linear', sr=sr, hop_length=hop_length)
+    # plt.colorbar(format='%+2.0f dB')
+    # plt.title('Power Spectrum')
+    plt.subplot(4,2,4)
+    for i in range(mel_basis.shape[0]):
+        plt.plot(librosa.util.normalize(mel_basis[i]))
+    plt.title("Normalized Mel Filter")
 
     # Plot Mel filterbank
     plt.subplot(4, 2, 5) 
@@ -138,5 +142,5 @@ if __name__ == '__main__':
     interval = 5
     # video_to_image(file_name, interval)
     
-    # show_all_plots(file_name, interval)
-    show_mfcc_plots_by_frames(file_name, interval)
+    show_all_plots(file_name, interval)
+    #show_mfcc_plots_by_frames(file_name, interval)
